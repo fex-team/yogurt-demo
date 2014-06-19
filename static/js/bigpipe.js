@@ -104,8 +104,9 @@
                     Util.loadCss(data.Css[i], function() {
                         !--remainingCss && insertDom();
                     });
-            } else
+            } else {
                 insertDom();
+            }
         }
 
         var insertDom = function() {
