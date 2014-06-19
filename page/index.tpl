@@ -10,6 +10,8 @@
     {% endscript %}
 
     {% widget "example:widget/pagelets/pageletA/pageletA.tpl" mode="async" id="pageletA" %}
+    {% widget "example:widget/pagelets/pageletB/pageletB.tpl" mode="quickling" id="pageletB" %}
+    {% widget "example:widget/pagelets/pageletC/pageletC.tpl" mode="async" id="pageletC" %}
 
 
     {% require "example:page/index.tpl" %}
