@@ -1,5 +1,5 @@
 module.exports = {
     hello: function () {
-        alert('hello');
+        console.log('async hello');
     }
 };

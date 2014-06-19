@@ -1,7 +1,7 @@
 (function() {
     var Util = (function() {
         var d = document,
-            head = d.getElementsByTagName("head")[0];
+            head = d.getElementsByTagName('head')[0];
 
         var loadJs = function(url, cb) {
             var script = d.createElement('script');
@@ -19,31 +19,26 @@
             head.appendChild(script);
         };
 
-        var cachedBrowser;
-
-        var browser = function() {
-            if (!cachedBrowser) {
-                var ua = navigator.userAgent.toLowerCase();
-                var match = /(webkit)[ \/]([\w.]+)/.exec(ua) ||
-                    /(opera)(?:.*version)?[ \/]([\w.]+)/.exec(ua) ||
-                    /(msie) ([\w.]+)/.exec(ua) || !/compatible/.test(ua) && /(mozilla)(?:.*? rv:([\w.]+))?/.exec(ua) ||
-                    [];
-                cachedBrowser = match[1];
-            }
-            return cachedBrowser;
-        };
+        var browser = (function() {
+            var ua = navigator.userAgent.toLowerCase();
+            var match = /(webkit)[ \/]([\w.]+)/.exec(ua) ||
+                /(opera)(?:.*version)?[ \/]([\w.]+)/.exec(ua) ||
+                /(msie) ([\w.]+)/.exec(ua) || !/compatible/.test(ua) && /(mozilla)(?:.*? rv:([\w.]+))?/.exec(ua) ||
+                [];
+            return match[1];
+        })();
 
         var loadCss = function(url, cb) {
-            var link = d.createElement("link");
-            link.type = "text/css";
-            link.rel = "stylesheet";
+            var link = d.createElement('link');
+            link.type = 'text/css';
+            link.rel = 'stylesheet';
             link.href = url;
 
-            if (browser() === "msie") {
+            if (browser === 'msie') {
                 link.onreadystatechange = function() {
                     /loaded|complete/.test(link.readyState) && cb();
                 }
-            } else if (browser() == "opera") {
+            } else if (browser == 'opera') {
                 link.onload = cb;
             } else {
                 //FF, Safari, Chrome
@@ -77,8 +72,8 @@
                 // If the code includes a valid, prologue position
                 // strict mode pragma, execute code by injecting a
                 // script tag into the document.
-                if ( code.indexOf("use strict") === 1 ) {
-                    script = document.createElement("script");
+                if ( code.indexOf('use strict') === 1 ) {
+                    script = document.createElement('script');
                     script.text = code;
                     head.appendChild( script ).parentNode.removeChild( script );
                 } else {
@@ -134,7 +129,7 @@
 
             for (i = 0, len = scriptText.length; i < len; i++) {
                 node = scriptText[i];
-                text = node.text || node.textContent || node.innerHTML || "";
+                text = node.text || node.textContent || node.innerHTML || '';
                 Util.globalEval(text);
             }
 
