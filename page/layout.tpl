@@ -8,6 +8,7 @@
 
         {% require "example:static/css/bootstrap.css" %}
         {% require "example:static/css/bootstrap-theme.css" %}
+        {% require "example:static/js/bigpipe.js" %}
         {% require "example:static/js/jquery-1.10.2.js" %}
         {% require "example:static/js/bootstrap.js" %}
 

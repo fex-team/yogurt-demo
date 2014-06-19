@@ -9,6 +9,8 @@
     A.sayHelloWorld();
     {% endscript %}
 
-{% endblock %}
+    {% widget "example:widget/pagelets/pageletA/pageletA.tpl" mode="async" id="pageletA" %}
 
-{% require "example:page/index.tpl" %}
+
+    {% require "example:page/index.tpl" %}
+{% endblock %}
