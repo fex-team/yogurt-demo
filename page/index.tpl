@@ -1,4 +1,4 @@
-{% extends 'layout.tpl' %}
+{% extends 'example:page/layout.tpl' %}
 
 {% block content %}
     Welcome to Yogurt, this is the content of index page.
