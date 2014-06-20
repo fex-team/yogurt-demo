@@ -3,7 +3,7 @@
         var d = document;
         var head = d.getElementsByTagName('head')[0];
 
-        // 获取浏览器信息
+        // get broswer info
         var browser = (function() {
             var ua = navigator.userAgent.toLowerCase();
             var match = /(webkit)[ \/]([\w.]+)/.exec(ua) ||
@@ -13,7 +13,6 @@
             return match[1];
         })();
 
-        // 加载 js
         var loadJs = function(url, cb) {
             var script = d.createElement('script');
             var loaded = false;
@@ -33,7 +32,6 @@
             head.appendChild(script);
         };
 
-        // 加载 css
         var loadCss = function(url, cb) {
             var link = d.createElement('link');
             link.type = 'text/css';
@@ -62,37 +60,30 @@
             head.appendChild(link);
         };
 
-        // 插入内嵌 style
         var appendStyle = function(code) {
             var dom = document.createElement('style');
             dom.innerHTML = code;
             head.appendChild(dom);
         };
 
-        // 执行 js 脚本。
         var globalEval = function(code) {
             var script;
 
             code = code.replace(/^\s+/, '').replace(/\s+$/, '');
 
             if (code) {
-                // If the code includes a valid, prologue position
-                // strict mode pragma, execute code by injecting a
-                // script tag into the document.
                 if (code.indexOf('use strict') === 1) {
                     script = document.createElement('script');
                     script.text = code;
                     head.appendChild(script).parentNode.removeChild(script);
                 } else {
-                    // Otherwise, avoid the DOM node creation, insertion
-                    // and removal by using an indirect global eval
                     eval(code);
                 }
             }
         };
 
         var ajax = function(url, cb, data) {
-            var xhr = new (window.XMLHttpRequest || ActiveXObject)("Microsoft.XMLHTTP");
+            var xhr = new (window.XMLHttpRequest || ActiveXObject)('Microsoft.XMLHTTP');
 
             xhr.onreadystatechange = function() {
                 if (this.readyState == 4) {
@@ -106,20 +97,38 @@
             }
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.send(data);
-        }
+        };
+
+        var mixin = function(a, b) {
+            if (a && b) {
+                for (var k in b) {
+                    if (b.hasOwnProperty(k)) {
+                        a[k] = b[k];
+                    }
+                }
+            }
+            return a;
+        };
 
         return {
             loadCss: loadCss,
             loadJs: loadJs,
             appendStyle: appendStyle,
             globalEval: globalEval,
-            ajax: ajax
+            ajax: ajax,
+            mixin: mixin
         };
     })();
 
 
     var BigPipe = function() {
 
+        // The order of render pagelet.
+        // - load css
+        // - append style
+        // - insert html
+        // - load js.
+        // - exec scripts.
         //
         // data
         //  - container       optional
@@ -129,19 +138,20 @@
         //  - css             []
         //  - styles          []
         //  - scripts         []
-        //  - onReady         function
+        //  - done            function
         // onDomInserted called when dom inserted.
         function PageLet(data, onDomInserted) {
             var remaining = 0;
 
             var loadCss = function() {
-                //load css
+                // load css
                 if (data.css && data.css.length) {
                     remaining = data.css.length;
-                    for (var i = remaining; i--;)
+                    for (var i = 0, len = remaining; i < len; i++) {
                         Util.loadCss(data.css[i], function() {
                             --remaining || insertDom();
                         });
+                    }
                 } else {
                     insertDom();
                 }
@@ -150,37 +160,46 @@
             var insertDom = function() {
                 var i, len, dom, node, text, scriptText;
 
+                // insert style code
                 if(data.styles && data.styles.length) {
                     for(i = 0, len = data.styles.length; i < len; i++) {
                         Util.appendStyle(data.styles[i]);
                     }
                 }
 
-                dom = data.contianer || document.getElementById(data.id);
+                dom = data.container || document.getElementById(data.id);
                 dom.innerHTML = data.html;
-                if(data.scripts && data.scripts.length) {
-                    for(i = 0, len = data.scripts.length; i < len; i++) {
-                        Util.globalEval(data.scripts[i]);
-                    }
-                }
 
                 onDomInserted();
             }
 
             var loadJs = function() {
                 var len = data.js && data.js.length;
-                var remaining = len;
-                var cb = data.onReady;
-                var i;
+                var remaining = len, i;
+
+                // exec data.scripts
+                var next = function() {
+                    var i, len;
+
+                    // eval scripts.
+                    if(data.scripts && data.scripts.length) {
+                        for(i = 0, len = data.scripts.length; i < len; i++) {
+                            Util.globalEval(data.scripts[i]);
+                        }
+                    }
+
+                    data.done && data.done(data.id);
+                };
+
 
                 if (!len) {
-                    cb && cb();
+                    next && next();
                     return;
                 }
 
-                for (i = 0, len = data.js.length; i < len; i++) {
-                    Util.loadJs(data.js[i], cb && function() {
-                        --remaining || cb();
+                for (i = 0; i < len; i++) {
+                    Util.loadJs(data.js[i], next && function() {
+                        --remaining || next();
                     });
                 }
             }
@@ -192,51 +211,108 @@
         }
 
         var d = document,
+            config = {},
             count = 0,
             pagelets = []; /* registered pagelets */
 
-        var onPageletArrive = function(p) {
-            var pagelet = PageLet(p, function() {
-                var item;
+        return {
 
-                if (!--count) {
+            // This is method will be executed automaticlly.
+            //
+            // - after chunk output pagelet.
+            // - after async load quickling pagelet.
+            onPageletArrive: function(obj) {
+                config[obj.id] && (obj = Util.mixin(obj, config[obj.id]));
 
-                    while ((item = pagelets.shift())) {
-                        item.loadJs();
+                var pagelet = PageLet(obj, function() {
+                    var item;
+
+                    // enforce js executed after dom inserted.
+                    if (!--count) {
+                        while ((item = pagelets.shift())) {
+                            item.loadJs();
+                        }
+                    }
+                });
+                pagelets.push(pagelet);
+                count++;
+                pagelet.loadCss();
+            },
+
+            // Async load quicking pagelet.
+            // An quickling pagelet rendered only after someone called the
+            // BigPipe.load('pageletId');
+            //
+            // BigPipe.load(pageleteIds);
+            // BigPipe.load({
+            //   pagelets: ['pageletA']
+            //   param: 'key=val&kay=vel'
+            //   container: dom or {
+            //      pageletA: dom,
+            //      pageletB: another dom
+            //   },
+            //   cb: function() {
+            //
+            //   }
+            // });
+            //
+            // params:
+            //   - pagelets       pagelet id or array of pagelet id.
+            //   - param          extra params for the ajax call.
+            //   - container      by default, the pagelet will be rendered in
+            //                    some document node with the same id. With this
+            //                    option the pagelet can be renndered in
+            //                    specified document node.
+            //   - cb             done callback.
+            load: function(pagelets) {
+                var args = [];
+                var currentPageUrl = location.href;
+                var obj, i, id, cb, remaining, search, url, param;
+
+                // convert arguments.
+                // so we can accept
+                //
+                // - string with pagelet ID
+                // - string with pagelet IDs split by `,`.
+                // - array of string with pagelet ID
+                // - object with pagelets key.
+                if (pagelets instanceof Array) {
+                    obj = {
+                        pagelets: pagelets
+                    }
+                } else {
+                    obj = typeof pagelets === 'string' ? {
+                        pagelets: pagelets
+                    }: pagelets;
+                    pagelets = obj.pagelets;
+                    typeof pagelets === 'string' &&
+                        (pagelets = pagelets.split(/\s*,\s*/));
+                }
+
+                remaining = pagelets.length;
+                cb = obj.cb && function(pageletId) {
+                    delete config[pageletId];
+                    --remaining || obj.cb();
+                };
+
+                for(i = remaining - 1; i >= 0; i--) {
+                    id = pagelets[i];
+                    args.push('pagelets[]=' + id);
+                    config[id] = {
+                        container: obj.container && obj.container[id] ||
+                            obj.container,
+                        done: cb
                     }
                 }
-            });
-            pagelets.push(pagelet);
-            count++;
-            pagelet.loadCss();
-        };
 
-        return {
-            onPageletArrive: onPageletArrive,
-            load: function(pageletIDs, param) {
-
-                if (!(pageletIDs instanceof Array)) {
-                    pageletIDs = [pageletIDs];
-                }
-
-                var args = [],
-                    currentPageUrl = location.href,
-                    i, id;
-
-                for(i = pageletIDs.length - 1; i >= 0; i--) {
-                    id = pageletIDs[i];
-                    args.push('pagelets[]=' + id);
-                }
-
-                param = param ? '&' + param : '';
-
-                var search = location.search;
+                param = obj.param ? '&' + obj.param : '';
+                search = location.search;
                 search = search ? (search + '&') : '?';
-                var url = search + args.join('&') + param;
+                url = search + args.join('&') + param;
 
-                // 异步请求pagelets
                 Util.ajax(url, function(res) {
-                    // 如果数据返回回来前，发生切页，则不再处理，否则当前页面有可能被干掉
+
+                    // if the page url has been moved.
                     if(currentPageUrl !== location.href) {
                         return;
                     }
