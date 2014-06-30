@@ -9,7 +9,9 @@
     A.sayHelloWorld();
     {% endscript %}
 
-    {% widget "example:widget/pagelets/pageletA/pageletA.tpl" mode="async" id="pageletA" %}
+    <div id="pageletPlaceHolder"></div>
+
+    {% widget "example:widget/pagelets/pageletA/pageletA.tpl" mode="async" id="pageletA" for="pageletPlaceHolder" %}
     {% widget "example:widget/pagelets/pageletB/pageletB.tpl" mode="quickling" id="pageletB" %}
     {% widget "example:widget/pagelets/pageletC/pageletC.tpl" mode="async" id="pageletC" %}
 
