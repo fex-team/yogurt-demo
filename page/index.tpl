@@ -1,20 +1,20 @@
 {% extends 'example:page/layout.tpl' %}
 
+{% block beforecontent %}
+    {% widget "example:widget/pagelets/jumbotron/jumbotron.tpl" id="jumbotron" mode="async" %}
+{% endblock %}
+
 {% block content %}
-    Welcome to Yogurt, this is the content of index page.
-
-    {% script %}
-    var A = require('example:widget/widgetB/widgetB.js');
-
-    A.sayHelloWorld();
-    {% endscript %}
-
-    <div id="pageletPlaceHolder"></div>
-
-    {% widget "example:widget/pagelets/pageletA/pageletA.tpl" mode="async" id="pageletA" for="pageletPlaceHolder" %}
-    {% widget "example:widget/pagelets/pageletB/pageletB.tpl" mode="quickling" id="pageletB" %}
-    {% widget "example:widget/pagelets/pageletC/pageletC.tpl" mode="async" id="pageletC" %}
-
-
-    {% require "example:page/index.tpl" %}
+     <!-- Example row of columns -->
+    <div class="row">
+      <div class="col-md-4">
+          {% widget "example:widget/pagelets/heading/heading.tpl" id="heding1" mode="async" %}
+      </div>
+      <div class="col-md-4">
+        {% widget "example:widget/pagelets/heading/heading.tpl" id="heding2" mode="async" %}
+     </div>
+      <div class="col-md-4">
+        {% widget "example:widget/pagelets/heading/heading.tpl" id="heding3" mode="async" %}
+      </div>
+    </div>
 {% endblock %}
